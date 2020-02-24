@@ -22,6 +22,8 @@
 
 namespace WebDriver\SauceLabs;
 
+use WebDriver\Exception\CurlExec;
+use WebDriver\Service\CurlService;
 use WebDriver\ServiceFactory;
 
 /**
@@ -44,7 +46,7 @@ class SauceRest
     /**
      * Curl service
      *
-     * @var \WebDriver\Service\CurlService
+     * @var CurlService
      */
     private $curlService;
 
@@ -70,7 +72,7 @@ class SauceRest
     /**
      * Set curl service
      *
-     * @param \WebDriver\Service\CurlService $curlService
+     * @param CurlService $curlService
      */
     public function setCurlService($curlService)
     {
@@ -80,7 +82,7 @@ class SauceRest
     /**
      * Get curl service
      *
-     * @return \WebDriver\Service\CurlService
+     * @return CurlService
      */
     public function getCurlService()
     {
@@ -107,27 +109,29 @@ class SauceRest
      *
      * @return mixed
      *
-     * @throws \WebDriver\Exception\CurlExec
+     * @throws CurlExec
      *
      * @see http://saucelabs.com/docs/saucerest
      */
     protected function execute($requestMethod, $url, $parameters = null, $extraOptions = array())
     {
-        $extraOptions = array(
-            CURLOPT_HTTPAUTH => CURLAUTH_BASIC,
-            CURLOPT_USERPWD => $this->userId . ':' . $this->accessKey,
+        $extraOptions = array_merge($extraOptions,
+            array(
+                CURLOPT_HTTPAUTH => CURLAUTH_BASIC,
+                CURLOPT_USERPWD => $this->userId . ':' . $this->accessKey,
 
-            // don't verify SSL certificates
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_SSL_VERIFYHOST => false,
+                // don't verify SSL certificates
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false,
 
-            CURLOPT_HTTPHEADER => array('Expect:'),
+                CURLOPT_HTTPHEADER => array('Expect:'),
             CURLOPT_FAILONERROR => true,
+            )
         );
 
         $url = 'https://saucelabs.com/rest/v1/' . $url;
 
-        list($rawResult, $info) = $this->curlService->execute($requestMethod, $url, $parameters, array_merge($extraOptions, $this->transientOptions));
+        list($rawResult, $info) = $this->curlService->execute($requestMethod, $url, $parameters, array_replace($extraOptions, $this->transientOptions));
 
         $this->transientOptions = array();
 
